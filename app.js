@@ -5,14 +5,24 @@ const hourlyRateInput = document.getElementById('hourlyRate');
 const bonusSlider = document.getElementById('bonus');
 const bonusInput = document.getElementById('bonusInput');
 const calculateBtn = document.getElementById('calculateBtn');
+const shareBtn = document.getElementById('shareBtn');
 const emptyState = document.getElementById('emptyState');
 const resultsContainer = document.getElementById('resultsContainer');
+const dateResult = document.getElementById('dateResult');
+const startResult = document.getElementById('startResult');
+const endResult = document.getElementById('endResult');
 const hoursResult = document.getElementById('hoursResult');
-const salaryResult = document.getElementById('salaryResult');
-const bonusResultCard = document.getElementById('bonusResultCard');
-const bonusSalaryResult = document.getElementById('bonusSalaryResult');
+const rateResult = document.getElementById('rateResult');
+const bonusLabelResult = document.getElementById('bonusLabelResult');
+const totalResult = document.getElementById('totalResult');
 const startTimeError = document.getElementById('startTimeError');
 const endTimeError = document.getElementById('endTimeError');
+
+// Store current calculation data for sharing
+let currentCalculationData = null;
+
+// Store original share button HTML
+const originalShareBtnHTML = shareBtn.innerHTML;
 
 // Sync bonus slider and input
 bonusSlider.addEventListener('input', (e) => {
@@ -46,6 +56,9 @@ bonusInput.addEventListener('blur', (e) => {
 
 // Calculate button handler
 calculateBtn.addEventListener('click', handleCalculate);
+
+// Share button handler
+shareBtn.addEventListener('click', handleShare);
 
 // Allow Enter key to trigger calculation
 document.addEventListener('keydown', (e) => {
@@ -100,6 +113,78 @@ function formatHours(hours) {
     return hours.toFixed(2);
 }
 
+function formatDate(date) {
+    return new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).format(date);
+}
+
+function formatTime(timeString) {
+    const [hours, minutes] = timeString.split(':');
+    return `${hours}:${minutes}`;
+}
+
+function createShareText(data) {
+    let text = `Qianculator Wage Calculation\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+    text += `Date: ${data.date}\n`;
+    text += `Start: ${data.startTime}\n`;
+    text += `End: ${data.endTime}\n`;
+    text += `Worked Hours: ${data.hours}\n`;
+    text += `Hourly Rate: ${data.hourlyRate}\n`;
+    text += `Bonus: ${data.bonusLabel}\n`;
+    text += `\nTotal Pay Out: ${data.totalPay}\n`;
+    text += `\n━━━━━━━━━━━━━━━━━━━━━━━━`;
+    return text;
+}
+
+async function handleShare() {
+    if (!currentCalculationData) return;
+
+    const shareText = createShareText(currentCalculationData);
+
+    // Try to use Web Share API if available
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Qianculator - Wage Calculation',
+                text: shareText
+            });
+            // Show feedback
+            shareBtn.innerHTML = '<span class="share-icon">✓</span><span class="share-text">Shared!</span>';
+            shareBtn.style.background = 'linear-gradient(135deg, #6bff9d 0%, #8fff8f 100%)';
+            
+            setTimeout(() => {
+                shareBtn.innerHTML = originalShareBtnHTML;
+                shareBtn.style.background = '';
+            }, 2000);
+        } catch (err) {
+            // User cancelled or error occurred, fall back to clipboard
+            copyToClipboard(shareText);
+        }
+    } else {
+        // Fall back to clipboard
+        copyToClipboard(shareText);
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        shareBtn.innerHTML = '<span class="share-icon">✓</span><span class="share-text">Copied!</span>';
+        shareBtn.style.background = 'linear-gradient(135deg, #6bff9d 0%, #8fff8f 100%)';
+        
+        setTimeout(() => {
+            shareBtn.innerHTML = originalShareBtnHTML;
+            shareBtn.style.background = '';
+        }, 2000);
+    }).catch(() => {
+        // Fallback: show text in prompt
+        prompt('Copy this text to share:', text);
+    });
+}
+
 function handleCalculate() {
     clearErrors();
     
@@ -127,20 +212,38 @@ function handleCalculate() {
     // Calculate base salary
     const basePay = hours * hourlyRate;
     
-    // Display results
-    hoursResult.textContent = `${formatHours(hours)} hours`;
-    salaryResult.textContent = formatCurrency(basePay);
+    // Calculate total pay (with bonus if applicable)
+    let totalPay = basePay;
+    let bonusLabel = 'None';
     
-    // Show bonus result only if bonus is not 100%
     if (bonusPercent !== 100) {
         const bonusMultiplier = bonusPercent / 100;
-        const payWithBonus = basePay * bonusMultiplier;
-        
-        bonusSalaryResult.textContent = formatCurrency(payWithBonus);
-        bonusResultCard.style.display = 'block';
-    } else {
-        bonusResultCard.style.display = 'none';
+        totalPay = basePay * bonusMultiplier;
+        bonusLabel = `${bonusPercent}%`;
     }
+    
+    // Get current date
+    const currentDate = new Date();
+    
+    // Display results
+    dateResult.textContent = formatDate(currentDate);
+    startResult.textContent = formatTime(startTime);
+    endResult.textContent = formatTime(endTime);
+    hoursResult.textContent = `${formatHours(hours)} hours`;
+    rateResult.textContent = formatCurrency(hourlyRate);
+    bonusLabelResult.textContent = bonusLabel;
+    totalResult.textContent = formatCurrency(totalPay);
+    
+    // Store calculation data for sharing
+    currentCalculationData = {
+        date: formatDate(currentDate),
+        startTime: formatTime(startTime),
+        endTime: formatTime(endTime),
+        hours: `${formatHours(hours)} hours`,
+        hourlyRate: formatCurrency(hourlyRate),
+        bonusLabel: bonusLabel,
+        totalPay: formatCurrency(totalPay)
+    };
     
     // Show results panel
     emptyState.style.display = 'none';

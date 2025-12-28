@@ -62,20 +62,41 @@
                 </div>
 
                 <div id="resultsContainer" class="results-container" style="display: none;">
-                    <div class="result-card">
-                        <div class="result-label">Hours Worked</div>
-                        <div class="result-value" id="hoursResult">-</div>
+                    <div class="result-summary-card">
+                        <div class="result-row">
+                            <span class="result-row-label">Date:</span>
+                            <span class="result-row-value" id="dateResult">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-row-label">Start:</span>
+                            <span class="result-row-value" id="startResult">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-row-label">End:</span>
+                            <span class="result-row-value" id="endResult">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-row-label">Worked Hours:</span>
+                            <span class="result-row-value" id="hoursResult">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-row-label">Hourly Rate:</span>
+                            <span class="result-row-value" id="rateResult">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-row-label">Bonus:</span>
+                            <span class="result-row-value" id="bonusLabelResult">-</span>
+                        </div>
+                        <div class="result-row result-row-total">
+                            <span class="result-row-label">Total Pay Out:</span>
+                            <span class="result-row-value" id="totalResult">-</span>
+                        </div>
                     </div>
 
-                    <div class="result-card">
-                        <div class="result-label">Salary</div>
-                        <div class="result-value" id="salaryResult">-</div>
-                    </div>
-
-                    <div class="result-card" id="bonusResultCard" style="display: none;">
-                        <div class="result-label">Salary (with Bonus)</div>
-                        <div class="result-value" id="bonusSalaryResult">-</div>
-                    </div>
+                    <button id="shareBtn" class="share-btn">
+                        <span class="share-icon">📤</span>
+                        <span class="share-text">Share</span>
+                    </button>
                 </div>
             </div>
         </main>
