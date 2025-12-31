@@ -376,3 +376,172 @@ function handleCalculate() {
     }, 100);
 }
 
+// Install Prompt Handling
+let deferredPrompt = null;
+const installPrompt = document.getElementById('installPrompt');
+const installBtn = document.getElementById('installBtn');
+const dismissInstallBtn = document.getElementById('dismissInstallBtn');
+const footerInstallInfo = document.getElementById('footerInstallInfo');
+const footerInstallBtn = document.getElementById('footerInstallBtn');
+const footerInstallInstructions = document.getElementById('footerInstallInstructions');
+
+// Check if app is already installed
+function isAppInstalled() {
+    // Check if running in standalone mode
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        return true;
+    }
+    // Check if navigator.standalone is true (iOS)
+    if (window.navigator.standalone === true) {
+        return true;
+    }
+    return false;
+}
+
+// Check if user has dismissed the prompt before
+function hasDismissedPrompt() {
+    return localStorage.getItem('installPromptDismissed') === 'true';
+}
+
+// Show install prompt if conditions are met
+function showInstallPrompt() {
+    // Don't show if already installed
+    if (isAppInstalled()) {
+        return;
+    }
+    
+    // Don't show if user dismissed it
+    if (hasDismissedPrompt()) {
+        showFooterInstallInfo();
+        return;
+    }
+    
+    // Show after a short delay
+    setTimeout(() => {
+        if (installPrompt) {
+            installPrompt.style.display = 'block';
+        }
+    }, 3000); // Show after 3 seconds
+}
+
+// Show footer install info
+function showFooterInstallInfo() {
+    // Don't show if already installed
+    if (isAppInstalled()) {
+        return;
+    }
+    
+    // Only show if prompt was dismissed
+    if (!hasDismissedPrompt()) {
+        return;
+    }
+    
+    // Set platform-specific instructions
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    if (footerInstallInstructions) {
+        if (isIOS) {
+            footerInstallInstructions.textContent = 'Tap Share → Add to Home Screen';
+        } else if (isAndroid) {
+            footerInstallInstructions.textContent = 'Tap menu (⋮) → Add to Home Screen';
+        } else {
+            footerInstallInstructions.textContent = 'Look for install icon in address bar';
+        }
+    }
+    
+    // Show footer install info
+    if (footerInstallInfo) {
+        footerInstallInfo.style.display = 'block';
+    }
+}
+
+// Handle install button click (from banner)
+async function handleInstallClick() {
+    if (deferredPrompt) {
+        // Show the install prompt
+        deferredPrompt.prompt();
+        
+        // Wait for the user to respond
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+        } else {
+            console.log('User dismissed the install prompt');
+        }
+        
+        deferredPrompt = null;
+        if (installPrompt) {
+            installPrompt.style.display = 'none';
+        }
+    } else {
+        // Fallback for iOS or browsers without beforeinstallprompt
+        // Show instructions
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isAndroid = /Android/.test(navigator.userAgent);
+        
+        if (isIOS) {
+            alert('To install this app:\n1. Tap the Share button\n2. Select "Add to Home Screen"');
+        } else if (isAndroid) {
+            alert('To install this app:\n1. Tap the menu (⋮)\n2. Select "Add to Home Screen" or "Install App"');
+        } else {
+            alert('To install this app, look for the install icon in your browser\'s address bar.');
+        }
+        
+        if (installPrompt) {
+            installPrompt.style.display = 'none';
+        }
+        localStorage.setItem('installPromptDismissed', 'true');
+        showFooterInstallInfo();
+    }
+}
+
+if (installBtn) {
+    installBtn.addEventListener('click', handleInstallClick);
+}
+
+// Handle footer install button click
+if (footerInstallBtn) {
+    footerInstallBtn.addEventListener('click', handleInstallClick);
+}
+
+// Handle dismiss button click
+if (dismissInstallBtn) {
+    dismissInstallBtn.addEventListener('click', () => {
+        if (installPrompt) {
+            installPrompt.style.display = 'none';
+        }
+        localStorage.setItem('installPromptDismissed', 'true');
+        showFooterInstallInfo();
+    });
+}
+
+// Listen for beforeinstallprompt event (Chrome, Edge, etc.)
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing
+    e.preventDefault();
+    // Stash the event so it can be triggered later
+    deferredPrompt = e;
+    // Show our custom install prompt
+    showInstallPrompt();
+});
+
+// Listen for app installed event
+window.addEventListener('appinstalled', () => {
+    console.log('App was installed');
+    if (installPrompt) {
+        installPrompt.style.display = 'none';
+    }
+    deferredPrompt = null;
+});
+
+// Show prompt on page load if conditions are met
+if (!isAppInstalled() && !hasDismissedPrompt()) {
+    // For iOS and other browsers, show prompt after delay
+    showInstallPrompt();
+} else if (!isAppInstalled() && hasDismissedPrompt()) {
+    // Show footer install info if prompt was dismissed
+    showFooterInstallInfo();
+}
+
