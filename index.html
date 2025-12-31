@@ -16,19 +16,21 @@
         <main class="main-content">
             <div class="controls-panel">
                 <div class="control-group">
-                    <label for="startTime" class="slider-label">
-                        <span>Start Time:</span>
+                    <label class="slider-label">
+                        <span>Times:</span>
                     </label>
-                    <input type="time" id="startTime" class="time-input" required>
-                    <span class="error-message" id="startTimeError"></span>
-                </div>
-
-                <div class="control-group">
-                    <label for="endTime" class="slider-label">
-                        <span>End Time:</span>
-                    </label>
-                    <input type="time" id="endTime" class="time-input" required>
-                    <span class="error-message" id="endTimeError"></span>
+                    <div class="time-inputs-group">
+                        <div class="time-input-wrapper">
+                            <label for="startTime" class="time-input-label">Start</label>
+                            <input type="time" id="startTime" class="time-input" required>
+                            <span class="error-message" id="startTimeError"></span>
+                        </div>
+                        <div class="time-input-wrapper">
+                            <label for="endTime" class="time-input-label">End</label>
+                            <input type="time" id="endTime" class="time-input" required>
+                            <span class="error-message" id="endTimeError"></span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="control-group">
@@ -47,6 +49,63 @@
                     <div class="slider-input-group">
                         <input type="range" id="bonus" min="50" max="200" value="100" class="slider">
                         <input type="number" id="bonusInput" min="50" max="200" value="100" class="number-input">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="slider-label">
+                        <span>Calculate KM Reimbursement?</span>
+                    </label>
+                    <div class="km-option-group">
+                        <label class="km-option-label">
+                            <input type="radio" name="kmOption" value="no" checked>
+                            <span>No</span>
+                        </label>
+                        <label class="km-option-label">
+                            <input type="radio" name="kmOption" value="difference">
+                            <span>Yes by Difference</span>
+                        </label>
+                        <label class="km-option-label">
+                            <input type="radio" name="kmOption" value="total">
+                            <span>Yes by Drive</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group" id="kmDifferenceGroup" style="display: none;">
+                    <label class="slider-label">
+                        <span>KM Difference:</span>
+                    </label>
+                    <div class="km-inputs-group">
+                        <div class="km-input-wrapper">
+                            <label for="startKm" class="km-input-label">Start KM</label>
+                            <input type="number" id="startKm" min="0" step="0.1" class="number-input km-input" required>
+                            <span class="error-message" id="startKmError"></span>
+                        </div>
+                        <div class="km-input-wrapper">
+                            <label for="stopKm" class="km-input-label">Stop KM</label>
+                            <input type="number" id="stopKm" min="0" step="0.1" class="number-input km-input" required>
+                            <span class="error-message" id="stopKmError"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group" id="kmTotalGroup" style="display: none;">
+                    <label for="kmDriven" class="slider-label">
+                        <span>KM Driven:</span>
+                    </label>
+                    <div class="slider-input-group">
+                        <input type="number" id="kmDriven" min="0" step="0.1" class="number-input" required>
+                        <span class="error-message" id="kmDrivenError"></span>
+                    </div>
+                </div>
+
+                <div class="control-group" id="kmRateGroup" style="display: none;">
+                    <label for="kmRate" class="slider-label">
+                        <span>KM Rate (€/km):</span>
+                    </label>
+                    <div class="slider-input-group">
+                        <input type="number" id="kmRate" min="0" step="0.01" value="0.21" class="number-input">
                     </div>
                 </div>
 
@@ -86,6 +145,10 @@
                         <div class="result-row">
                             <span class="result-row-label">Bonus:</span>
                             <span class="result-row-value" id="bonusLabelResult">-</span>
+                        </div>
+                        <div class="result-row" id="kmReimbursementRow" style="display: none;">
+                            <span class="result-row-label">KM Reimbursement:</span>
+                            <span class="result-row-value" id="kmReimbursementResult">-</span>
                         </div>
                         <div class="result-row result-row-total">
                             <span class="result-row-label">Total Pay Out:</span>

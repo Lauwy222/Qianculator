@@ -14,9 +14,22 @@ const endResult = document.getElementById('endResult');
 const hoursResult = document.getElementById('hoursResult');
 const rateResult = document.getElementById('rateResult');
 const bonusLabelResult = document.getElementById('bonusLabelResult');
+const kmReimbursementRow = document.getElementById('kmReimbursementRow');
+const kmReimbursementResult = document.getElementById('kmReimbursementResult');
 const totalResult = document.getElementById('totalResult');
 const startTimeError = document.getElementById('startTimeError');
 const endTimeError = document.getElementById('endTimeError');
+const kmOptionRadios = document.querySelectorAll('input[name="kmOption"]');
+const kmDifferenceGroup = document.getElementById('kmDifferenceGroup');
+const kmTotalGroup = document.getElementById('kmTotalGroup');
+const kmRateGroup = document.getElementById('kmRateGroup');
+const startKmInput = document.getElementById('startKm');
+const stopKmInput = document.getElementById('stopKm');
+const kmDrivenInput = document.getElementById('kmDriven');
+const kmRateInput = document.getElementById('kmRate');
+const startKmError = document.getElementById('startKmError');
+const stopKmError = document.getElementById('stopKmError');
+const kmDrivenError = document.getElementById('kmDrivenError');
 
 // Store current calculation data for sharing
 let currentCalculationData = null;
@@ -54,6 +67,26 @@ bonusInput.addEventListener('blur', (e) => {
     e.target.value = value;
 });
 
+// KM option change handler
+kmOptionRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        // Update styling for radio labels
+        document.querySelectorAll('.km-option-label').forEach(label => {
+            label.classList.remove('selected');
+        });
+        e.target.closest('.km-option-label').classList.add('selected');
+        handleKmOptionChange();
+    });
+    
+    // Initial styling
+    if (radio.checked) {
+        radio.closest('.km-option-label').classList.add('selected');
+    }
+});
+
+// Initial KM option setup
+handleKmOptionChange();
+
 // Calculate button handler
 calculateBtn.addEventListener('click', handleCalculate);
 
@@ -67,11 +100,37 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+function handleKmOptionChange() {
+    const selectedOption = document.querySelector('input[name="kmOption"]:checked').value;
+    
+    // Hide all KM input groups first
+    kmDifferenceGroup.style.display = 'none';
+    kmTotalGroup.style.display = 'none';
+    kmRateGroup.style.display = 'none';
+    
+    // Show relevant groups based on selection
+    if (selectedOption === 'difference') {
+        kmDifferenceGroup.style.display = 'block';
+        kmRateGroup.style.display = 'block';
+    } else if (selectedOption === 'total') {
+        kmTotalGroup.style.display = 'block';
+        kmRateGroup.style.display = 'block';
+    }
+}
+
 function clearErrors() {
     startTimeError.textContent = '';
     endTimeError.textContent = '';
     startTimeInput.style.borderColor = '#ffe0ec';
     endTimeInput.style.borderColor = '#ffe0ec';
+    
+    // Clear KM errors
+    if (startKmError) startKmError.textContent = '';
+    if (stopKmError) stopKmError.textContent = '';
+    if (kmDrivenError) kmDrivenError.textContent = '';
+    if (startKmInput) startKmInput.style.borderColor = '#ffe0ec';
+    if (stopKmInput) stopKmInput.style.borderColor = '#ffe0ec';
+    if (kmDrivenInput) kmDrivenInput.style.borderColor = '#ffe0ec';
 }
 
 function showError(inputElement, errorElement, message) {
@@ -127,16 +186,20 @@ function formatTime(timeString) {
 }
 
 function createShareText(data) {
-    let text = `Qianculator Wage Calculation\n`;
-    text += `━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-    text += `Date: ${data.date}\n`;
-    text += `Start: ${data.startTime}\n`;
-    text += `End: ${data.endTime}\n`;
+    let text = `Date: ${data.date}\n`;
+    text += `Start shift: ${data.startTime}\n`;
+    text += `End shift: ${data.endTime}\n`;
     text += `Worked Hours: ${data.hours}\n`;
     text += `Hourly Rate: ${data.hourlyRate}\n`;
     text += `Bonus: ${data.bonusLabel}\n`;
+    
+    if (data.kmReimbursement) {
+        text += `KM Driven: ${data.kmDriven}\n`;
+        text += `KM Reimbursement: ${data.kmReimbursement}\n`;
+    }
+    
     text += `\nTotal Pay Out: ${data.totalPay}\n`;
-    text += `\n━━━━━━━━━━━━━━━━━━━━━━━━`;
+    text += `\n━━[qianculator.pages.dev]━━`;
     return text;
 }
 
@@ -222,6 +285,49 @@ function handleCalculate() {
         bonusLabel = `${bonusPercent}%`;
     }
     
+    // Calculate KM reimbursement
+    const kmOption = document.querySelector('input[name="kmOption"]:checked').value;
+    let kmReimbursement = 0;
+    let kmDriven = 0;
+    
+    if (kmOption !== 'no') {
+        // Validate KM inputs if KM reimbursement is enabled
+        if (kmOption === 'difference') {
+            const startKm = parseFloat(startKmInput.value);
+            const stopKm = parseFloat(stopKmInput.value);
+            
+            if (!startKmInput.value || isNaN(startKm)) {
+                showError(startKmInput, startKmError, 'Please enter start KM');
+                return;
+            }
+            
+            if (!stopKmInput.value || isNaN(stopKm)) {
+                showError(stopKmInput, stopKmError, 'Please enter stop KM');
+                return;
+            }
+            
+            if (stopKm < startKm) {
+                showError(stopKmInput, stopKmError, 'Stop KM cannot be less than Start KM');
+                return;
+            }
+            
+            kmDriven = stopKm - startKm;
+        } else if (kmOption === 'total') {
+            const kmDrivenValue = parseFloat(kmDrivenInput.value);
+            
+            if (!kmDrivenInput.value || isNaN(kmDrivenValue)) {
+                showError(kmDrivenInput, kmDrivenError, 'Please enter KM driven');
+                return;
+            }
+            
+            kmDriven = kmDrivenValue;
+        }
+        
+        const kmRate = parseFloat(kmRateInput.value) || 0.21;
+        kmReimbursement = kmDriven * kmRate;
+        totalPay += kmReimbursement;
+    }
+    
     // Get current date
     const currentDate = new Date();
     
@@ -232,6 +338,16 @@ function handleCalculate() {
     hoursResult.textContent = `${formatHours(hours)} hours`;
     rateResult.textContent = formatCurrency(hourlyRate);
     bonusLabelResult.textContent = bonusLabel;
+    
+    // Show/hide KM reimbursement row
+    if (kmOption !== 'no' && kmReimbursement > 0) {
+        const kmText = `${kmDriven.toFixed(1)}KM --> ${formatCurrency(kmReimbursement)}`;
+        kmReimbursementResult.textContent = kmText;
+        kmReimbursementRow.style.display = 'flex';
+    } else {
+        kmReimbursementRow.style.display = 'none';
+    }
+    
     totalResult.textContent = formatCurrency(totalPay);
     
     // Store calculation data for sharing
@@ -242,11 +358,21 @@ function handleCalculate() {
         hours: `${formatHours(hours)} hours`,
         hourlyRate: formatCurrency(hourlyRate),
         bonusLabel: bonusLabel,
+        kmReimbursement: kmOption !== 'no' && kmReimbursement > 0 ? formatCurrency(kmReimbursement) : null,
+        kmDriven: kmOption !== 'no' ? `${kmDriven.toFixed(1)} km` : null,
         totalPay: formatCurrency(totalPay)
     };
     
     // Show results panel
     emptyState.style.display = 'none';
     resultsContainer.style.display = 'flex';
+    
+    // Scroll to results on mobile
+    setTimeout(() => {
+        const previewPanel = document.querySelector('.preview-panel');
+        if (previewPanel) {
+            previewPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 100);
 }
 
